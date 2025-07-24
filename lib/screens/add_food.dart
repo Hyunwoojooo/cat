@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:exif/exif.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'home_screen.dart';
 
 class AddFood extends StatefulWidget {
@@ -36,75 +37,267 @@ class _AddFoodState extends State<AddFood> {
   String? selectedFoodRemain;
   String? selectedWaterRemain;
   String? selectedFoodType;
-  static const String KAKAO_API_KEY = '4faeb42201cf02a0d3555f161c3879ad';
 
-  // 드롭다운 아이템 리스트
   final List<String> feedingMethodItems = [
     "선택",
-    "밥 그릇만",
-    "바닥(그릇 없음)",
-    "자동 급여기"
+    "1. 자유급식",
+    "2. 시간제급식",
+    "3. 수동급식",
   ];
+
   final List<String> cleanlinessRatingItems = [
     "선택",
-    "1. 전혀 위생적이지 않음",
-    "2. 위생적이지 않음",
+    "1. 매우 깨끗함",
+    "2. 깨끗함",
     "3. 보통",
-    "4. 위생적임",
-    "5. 매우 위생적임",
+    "4. 더러움",
+    "5. 매우 더러움",
   ];
+
   final List<String> shelterConditionItems = [
     "선택",
-    "1. 전혀 노출되지 않음",
-    "2. 노출되지 않음",
+    "1. 매우 좋음",
+    "2. 좋음",
     "3. 보통",
-    "4. 노출됨",
-    "5. 매우 노출됨"
+    "4. 나쁨",
+    "5. 매우 나쁨",
   ];
-  // 추가: 드롭다운 항목 리스트
+
   final List<String> bowlSizeItems = [
     "선택",
-    "1. 250ml(접시, 햇반)",
-    "2. 500ml(국그릇)",
-    "3. 1L(냄비 그릇)",
-    "4. 2L(탕요기) 이상"
+    "1. 작음",
+    "2. 보통",
+    "3. 큼",
   ];
+
   final List<String> bowlCleanlinessItems = [
     "선택",
-    "1. 매우 더러움",
-    "2. 더러움",
+    "1. 매우 깨끗함",
+    "2. 깨끗함",
     "3. 보통",
-    "4. 청결",
-    "5. 매우 청결"
+    "4. 더러움",
+    "5. 매우 더러움",
   ];
-  final List<String> foodRemainItems = ["선택", "1. 사료 있음", "2. 사료 없음"];
-  final List<String> waterRemainItems = ["선택", "1. 물 있음", "2. 물 없음"];
+
+  final List<String> foodRemainItems = [
+    "선택",
+    "1. 없음",
+    "2. 적음",
+    "3. 보통",
+    "4. 많음",
+    "5. 매우 많음",
+  ];
+
+  final List<String> waterRemainItems = [
+    "선택",
+    "1. 없음",
+    "2. 적음",
+    "3. 보통",
+    "4. 많음",
+    "5. 매우 많음",
+  ];
+
   final List<String> foodTypeItems = [
     "선택",
     "1. 건사료",
-    "2. 동물용 습식캔",
-    "3. 사람 음식물",
-    "4. 확인 불가"
+    "2. 습식사료",
+    "3. 생고기",
+    "4. 생선",
+    "5. 기타",
   ];
+
+  // Kakao Maps API 키를 상수로 정의
+  static const String KAKAO_API_KEY =
+      '4faeb42201cf02a0d3555f161c3879ad'; // TODO: 실제 API 키로 교체 필요
+
+  // 권한 요청 함수
+  Future<bool> _requestPermissions() async {
+    if (Platform.isAndroid) {
+      print('=== 권한 확인 시작 ===');
+
+      try {
+        // 위치 권한만 확인 (이미지 읽기는 권한이 필요하지 않음)
+        PermissionStatus locationStatus = await Permission.location.status;
+        print('현재 위치 권한 상태: $locationStatus');
+
+        // 위치 권한이 이미 허용되어 있는지 확인
+        if (locationStatus.isGranted) {
+          print('위치 권한이 이미 허용되어 있습니다.');
+          return true;
+        }
+
+        // 위치 권한만 요청
+        print('위치 권한 요청 중...');
+        PermissionStatus result = await Permission.location.request();
+        print('위치 권한 요청 후 상태: $result');
+
+        if (result.isGranted) {
+          print('위치 권한이 허용되었습니다.');
+          return true;
+        } else {
+          print('위치 권한이 거부되었습니다.');
+          // 권한이 거부된 경우 사용자에게 설명
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('위치 권한 필요'),
+                  content: Text(
+                      '이미지의 GPS 위치 정보를 읽기 위해서는 위치 권한이 필요합니다. 설정에서 위치 권한을 허용해주세요.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        openAppSettings();
+                      },
+                      child: Text('설정으로 이동'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+          return false;
+        }
+      } catch (e) {
+        print('권한 요청 중 오류 발생: $e');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 14, bottom: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required List<String> items,
+    required String value,
+    required void Function(String?) onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.grey.shade50,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: value,
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.grey.shade600,
+          ),
+          style: TextStyle(fontSize: 15, color: Colors.black87),
+          onChanged: onChanged,
+          items: items
+              .map(
+                (item) => DropdownMenuItem(value: item, child: Text(item)),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoBox({
+    required IconData icon,
+    required String text,
+    Color? color,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 14),
+      decoration: BoxDecoration(
+        color: color ?? Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.grey.shade600, size: 16),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 14, color: Colors.black87),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoArea() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        savedImagePath != null && File(savedImagePath!).existsSync()
+            ? SizedBox(
+                width: double.infinity,
+                height: 220,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.file(File(savedImagePath!), fit: BoxFit.cover),
+                ),
+              )
+            : SizedBox(
+                height: 220,
+                width: double.infinity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: Colors.grey.shade200,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    "이미지를 선택해주세요",
+                    style: TextStyle(
+                      fontSize: 25,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+      ],
+    );
+  }
 
   // 시간 선택 관련 변수
   TimeOfDay? selectedTime;
   String get formattedTime {
     if (imageDateTime == null) {
-      return '활동 시간을 선택해주세요';
+      return '발견 시간을 선택해주세요';
     }
     return imageDateTime!;
   }
-
-  // 1. 급식장소 TextField에 controller 사용
-  // final TextEditingController feedingSpotController = TextEditingController(); // 삭제
 
   Future<void> _selectDateTime(BuildContext context) async {
     final now = DateTime.now();
     DateTime initialDate = now;
     if (imageDateTime != null) {
       // "2025:05:30 15:03:09" → DateTime 파싱
-      final reg = RegExp(r"^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})$");
+      final reg = RegExp(
+        r"^(\\d{4}):(\\d{2}):(\\d{2}) (\\d{2}):(\\d{2}):(\\d{2})\$",
+      );
       final match = reg.firstMatch(imageDateTime!);
       if (match != null) {
         initialDate = DateTime(
@@ -144,135 +337,10 @@ class _AddFoodState extends State<AddFood> {
     });
   }
 
-  // 주요 발견 시간 위젯
-  Widget _buildTimeInfoBox() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildInfoBox(
-                icon: Icons.access_time,
-                text: formattedTime,
-              ),
-            ),
-            TextButton(
-              onPressed: () => _selectDateTime(context),
-              child: Text(
-                imageDateTime == null ? '선택' : '수정',
-                style: TextStyle(fontSize: 14),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // 날짜 데이터 형식 변환
-  String formatDateTimeRegExp(String inputDateTime) {
-    try {
-      RegExp regExp = RegExp(
-        r"^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})$",
-      );
-      if (!regExp.hasMatch(inputDateTime)) {
-        throw FormatException(
-          "입력 문자열이 'YYYY:MM:DD HH:MM:SS' 정규식과 일치하지 않습니다.",
-          inputDateTime,
-        );
-      }
-      return inputDateTime.replaceAllMapped(regExp, (match) {
-        return "${match.group(1)}년${match.group(2)}월${match.group(3)}일 ${match.group(4)}시${match.group(5)}분${match.group(6)}초";
-      });
-    } catch (e) {
-      print("formatDateTimeRegExp 오류: $e");
-      return "입력 형식 오류";
-    }
-  }
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 16, bottom: 6),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdown({
-    required List<String> items,
-    required String value,
-    required void Function(String?) onChanged,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.grey.shade50,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          isExpanded: true,
-          value: value,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey.shade600,
-          ),
-          style: TextStyle(fontSize: 15, color: Colors.black87),
-          onChanged: onChanged,
-          items: items
-              .map(
-                (item) => DropdownMenuItem(value: item, child: Text(item)),
-              )
-              .toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhotoArea() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        savedImagePath != null
-            ? SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: 220,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.file(File(savedImagePath!), fit: BoxFit.cover),
-                ),
-              )
-            : Container(
-                height: 220,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: Colors.grey.shade200,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '이미지 선택하기',
-                  style: TextStyle(fontSize: 22, color: Colors.grey.shade600),
-                ),
-              ),
-      ],
-    );
-  }
-
   Future<String?> _saveImageToAppDirectory(XFile imageFile) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String fileName =
-          DateTime.now().millisecondsSinceEpoch.toString() + '.jpg';
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String filePath = '${appDir.path}/$fileName';
       final File newImage = await File(imageFile.path).copy(filePath);
       return newImage.path;
@@ -282,9 +350,49 @@ class _AddFoodState extends State<AddFood> {
     }
   }
 
-  // 2. 이미지 선택 후 주소 자동 입력
+  // 위도/경도를 도로명 주소로 변환하는 함수
+  Future<String?> _getAddressFromCoordinates(double lat, double lng) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://dapi.kakao.com/v2/local/geo/coord2address.json?x=$lng&y=$lat',
+        ),
+        headers: {
+          'Authorization': 'KakaoAK $KAKAO_API_KEY',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['documents'] != null && data['documents'].isNotEmpty) {
+          final doc = data['documents'][0];
+          final road = doc['road_address'];
+          final jibun = doc['address'];
+          if (road != null && road['address_name'] != null) {
+            return road['address_name'];
+          } else if (jibun != null && jibun['address_name'] != null) {
+            return jibun['address_name'];
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      print('주소 변환 중 오류 발생: $e');
+      return null;
+    }
+  }
+
   Future<void> _showImagePicker() async {
     try {
+      // 안드로이드에서 권한 요청
+      if (Platform.isAndroid) {
+        bool hasPermissions = await _requestPermissions();
+        if (!hasPermissions) {
+          return; // 권한이 없으면 이미지 선택을 중단
+        }
+      }
+
       final XFile? pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 30,
@@ -295,17 +403,16 @@ class _AddFoodState extends State<AddFood> {
       if (pickedFile != null) {
         final String? savedPath = await _saveImageToAppDirectory(pickedFile);
         if (savedPath != null) {
+          // EXIF 데이터 먼저 읽고, 그 결과를 setState에서 한 번에 반영
           final exifResult = await _readExifDataForState(savedPath);
           setState(() {
             savedImagePath = savedPath;
-            // 여기서 바로 한글 포맷으로 변환
-            imageDateTime = exifResult['imageDateTime'] != null
-                ? formatDateTimeKor(exifResult['imageDateTime'])
-                : '';
+            imageDateTime = formatDateTimeKor(exifResult['imageDateTime']);
             feedingSpotLocation = exifResult['locationName'] ?? '';
-            // feedingSpotController.text = feedingSpotLocation; // 이 줄은 삭제!
           });
         }
+      } else {
+        print('이미지가 선택되지 않았습니다.');
       }
     } catch (e) {
       print('이미지 선택 중 오류 발생: $e');
@@ -316,6 +423,139 @@ class _AddFoodState extends State<AddFood> {
         ),
       );
     }
+  }
+
+  // EXIF 데이터만 읽고, setState는 하지 않는 함수
+  Future<Map<String, dynamic>> _readExifDataForState(String imagePath) async {
+    String? newImageDateTime;
+    String? newLocationName;
+    double? newLatitude;
+    double? newLongitude;
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      final exifData = await readExifFromBytes(bytes);
+
+      print('=== EXIF 데이터 읽기 시작 ===');
+      print('이미지 경로: $imagePath');
+      print('EXIF 데이터 키들: ${exifData.keys.toList()}');
+      print('플랫폼: ${Platform.operatingSystem}');
+
+      if (exifData.isEmpty) {
+        print('EXIF 데이터가 없습니다.');
+        return {
+          'imageDateTime': null,
+          'locationName': null,
+          'latitude': null,
+          'longitude': null,
+        };
+      }
+
+      // 날짜/시간 정보 읽기 (여러 형식 시도)
+      if (exifData.containsKey('EXIF DateTimeOriginal')) {
+        final dateTimeStr = exifData['EXIF DateTimeOriginal']?.printable;
+        print('EXIF DateTimeOriginal: $dateTimeStr');
+        newImageDateTime = dateTimeStr;
+      } else if (exifData.containsKey('Image DateTime')) {
+        final dateTimeStr = exifData['Image DateTime']?.printable;
+        print('Image DateTime: $dateTimeStr');
+        newImageDateTime = dateTimeStr;
+      } else if (exifData.containsKey('EXIF DateTime')) {
+        final dateTimeStr = exifData['EXIF DateTime']?.printable;
+        print('EXIF DateTime: $dateTimeStr');
+        newImageDateTime = dateTimeStr;
+      }
+
+      // GPS 정보 읽기 (더 안전한 방식)
+      bool hasGpsData = false;
+
+      // GPS 위도/경도 확인
+      if (exifData.containsKey('GPS GPSLatitude') &&
+          exifData.containsKey('GPS GPSLongitude')) {
+        hasGpsData = true;
+        print('GPS 데이터 발견');
+
+        try {
+          final latValue = exifData['GPS GPSLatitude']!;
+          final lonValue = exifData['GPS GPSLongitude']!;
+          final latRef = exifData['GPS GPSLatitudeRef']?.printable;
+          final lonRef = exifData['GPS GPSLongitudeRef']?.printable;
+
+          print('GPS 위도 값: $latValue');
+          print('GPS 경도 값: $lonValue');
+          print('GPS 위도 참조: $latRef');
+          print('GPS 경도 참조: $lonRef');
+
+          // 값이 Ratio 리스트인지 확인
+          if (latValue.values.length > 0 && lonValue.values.length > 0) {
+            newLatitude = _convertGpsToDecimal(
+              latValue.values.toList().cast<Ratio>(),
+            );
+            newLongitude = _convertGpsToDecimal(
+              lonValue.values.toList().cast<Ratio>(),
+            );
+
+            print('변환된 위도: $newLatitude');
+            print('변환된 경도: $newLongitude');
+
+            // 남반구/서반구 처리
+            if (latRef == 'S') newLatitude = -newLatitude;
+            if (lonRef == 'W') newLongitude = -newLongitude;
+
+            print('최종 위도: $newLatitude');
+            print('최종 경도: $newLongitude');
+
+            // 위도/경도를 도로명 주소로 변환
+            final address = await _getAddressFromCoordinates(
+              newLatitude,
+              newLongitude,
+            );
+            newLocationName = address ??
+                '위도: ${newLatitude.toStringAsFixed(4)}, 경도: ${newLongitude.toStringAsFixed(4)}';
+            print('변환된 주소: $newLocationName');
+          } else {
+            print('GPS 값이 비어있습니다.');
+          }
+        } catch (e) {
+          print('GPS 데이터 변환 오류: $e');
+        }
+      } else {
+        print('GPS 데이터가 없습니다.');
+        // GPS 관련 키들 출력
+        exifData.keys.where((key) => key.contains('GPS')).forEach((key) {
+          print('GPS 관련 키: $key = ${exifData[key]?.printable}');
+        });
+      }
+
+      print('=== EXIF 데이터 읽기 완료 ===');
+      print('날짜/시간: $newImageDateTime');
+      print('위치: $newLocationName');
+      print('위도: $newLatitude');
+      print('경도: $newLongitude');
+
+      return {
+        'imageDateTime': newImageDateTime,
+        'locationName': newLocationName,
+        'latitude': newLatitude,
+        'longitude': newLongitude,
+      };
+    } catch (e) {
+      print('EXIF 데이터 읽기 오류: $e');
+      print('스택 트레이스: ${StackTrace.current}');
+      return {
+        'imageDateTime': null,
+        'locationName': null,
+        'latitude': null,
+        'longitude': null,
+      };
+    }
+  }
+
+  double _convertGpsToDecimal(List<Ratio> ratios) {
+    if (ratios.length != 3) return 0.0;
+    double degrees = ratios[0].toDouble();
+    double minutes = ratios[1].toDouble();
+    double seconds = ratios[2].toDouble();
+    return degrees + (minutes / 60.0) + (seconds / 3600.0);
   }
 
   bool get isFormValid {
@@ -472,10 +712,8 @@ class _AddFoodState extends State<AddFood> {
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
                   maxLines: 2,
                   onChanged: (v) => setState(() => specialNotes = v),
@@ -527,12 +765,9 @@ class _AddFoodState extends State<AddFood> {
         selectedCleanlinessRating == "선택" ||
         selectedShelterCondition == null ||
         selectedShelterCondition == "선택") {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('모든 필수 항목을 선택해주세요.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('모든 필수 항목을 선택해주세요.')));
       return;
     }
 
@@ -599,8 +834,7 @@ class _AddFoodState extends State<AddFood> {
       final savedFoods = await FoodDatabase.instance.getAllFoods();
       print('저장 후 전체 급식 정보 수: ${savedFoods.length}');
       for (var savedFood in savedFoods) {
-        print(
-            '저장된 급식 정보: ${savedFood.feedingSpotLocation} - ${savedFood.discoveryTime}');
+        print('저장된 급식 정보: ${savedFood.feedingSpotLocation}');
       }
 
       if (mounted) {
@@ -610,10 +844,7 @@ class _AddFoodState extends State<AddFood> {
             duration: Duration(seconds: 2),
           ),
         );
-        print('=== add_food.dart에서 pop 호출 ===');
-        print(
-            'pop할 food 객체: ${food.feedingSpotLocation} - ${food.discoveryTime}');
-        Navigator.of(context).pop(food); // 급식 정보 데이터와 함께 이전 화면으로 돌아가기
+        Navigator.of(context).pop(food);
       }
     } catch (e, stackTrace) {
       print('데이터 저장 중 오류 발생: $e');
@@ -629,143 +860,31 @@ class _AddFoodState extends State<AddFood> {
     }
   }
 
-  Widget _buildInfoBox({
-    required IconData icon,
-    required String text,
-    Color? color,
-  }) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: color ?? Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey.shade600, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 15, color: Colors.black87),
+  // 주요 발견 시간 위젯
+  Widget _buildTimeInfoBox() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: _buildInfoBox(
+                icon: Icons.access_time,
+                text: formattedTime,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<Map<String, dynamic>> _readExifDataForState(String imagePath) async {
-    String? newImageDateTime;
-    String? newLocationName;
-    double? newLatitude;
-    double? newLongitude;
-    try {
-      final bytes = await File(imagePath).readAsBytes();
-      final exifData = await readExifFromBytes(bytes);
-
-      if (exifData.isEmpty) {
-        return {
-          'imageDateTime': null,
-          'locationName': null,
-          'latitude': null,
-          'longitude': null,
-        };
-      }
-
-      // 날짜/시간 정보 읽기
-      if (exifData.containsKey('EXIF DateTimeOriginal')) {
-        final dateTimeStr = exifData['EXIF DateTimeOriginal']?.printable;
-        newImageDateTime = dateTimeStr;
-      }
-
-      // GPS 정보 읽기
-      if (exifData.containsKey('GPS GPSLatitude') &&
-          exifData.containsKey('GPS GPSLongitude')) {
-        final latValue = exifData['GPS GPSLatitude']!;
-        final lonValue = exifData['GPS GPSLongitude']!;
-        final latRef = exifData['GPS GPSLatitudeRef']?.printable;
-        final lonRef = exifData['GPS GPSLongitudeRef']?.printable;
-
-        newLatitude = _convertGpsToDecimal(
-          latValue.values.toList().cast<Ratio>(),
-        );
-        newLongitude = _convertGpsToDecimal(
-          lonValue.values.toList().cast<Ratio>(),
-        );
-
-        if (latRef == 'S') newLatitude = -newLatitude!;
-        if (lonRef == 'W') newLongitude = -newLongitude!;
-
-        // 위도/경도를 도로명 주소로 변환
-        if (newLatitude != null && newLongitude != null) {
-          final address = await _getAddressFromCoordinates(
-            newLatitude,
-            newLongitude,
-          );
-          newLocationName = address ??
-              '위도: ${newLatitude.toStringAsFixed(4)}, 경도: ${newLongitude.toStringAsFixed(4)}';
-        }
-      }
-
-      return {
-        'imageDateTime': newImageDateTime,
-        'locationName': newLocationName,
-        'latitude': newLatitude,
-        'longitude': newLongitude,
-      };
-    } catch (e) {
-      print('EXIF 데이터 읽기 오류: $e');
-      return {
-        'imageDateTime': null,
-        'locationName': null,
-        'latitude': null,
-        'longitude': null,
-      };
-    }
-  }
-
-  double _convertGpsToDecimal(List<Ratio> ratios) {
-    if (ratios.length != 3) return 0.0;
-    double degrees = ratios[0].toDouble();
-    double minutes = ratios[1].toDouble();
-    double seconds = ratios[2].toDouble();
-    return degrees + (minutes / 60.0) + (seconds / 3600.0);
-  }
-
-  Future<String?> _getAddressFromCoordinates(double lat, double lng) async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-          'https://dapi.kakao.com/v2/local/geo/coord2address.json?x=$lng&y=$lat',
+            TextButton(
+              onPressed: () => _selectDateTime(context),
+              child: Text(
+                imageDateTime == null ? '선택' : '수정',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
         ),
-        headers: {
-          'Authorization': 'KakaoAK $KAKAO_API_KEY',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['documents'] != null && data['documents'].isNotEmpty) {
-          final doc = data['documents'][0];
-          final road = doc['road_address'];
-          final jibun = doc['address'];
-          if (road != null && road['address_name'] != null) {
-            return road['address_name'];
-          } else if (jibun != null && jibun['address_name'] != null) {
-            return jibun['address_name'];
-          }
-        }
-      }
-      return null;
-    } catch (e) {
-      print('주소 변환 중 오류 발생: $e');
-      return null;
-    }
+      ],
+    );
   }
 }
 

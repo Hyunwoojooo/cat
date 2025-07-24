@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: AppBarTheme(color: Colors.white),
       ),
+      debugShowCheckedModeBanner: false,
       home: const AuthWrapper(),
     );
   }
