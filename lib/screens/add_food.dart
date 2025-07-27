@@ -844,7 +844,9 @@ class _AddFoodState extends State<AddFood> {
             duration: Duration(seconds: 2),
           ),
         );
-        Navigator.of(context).pop(food);
+        // id(primary key) 반영된 Food 객체 반환
+        final savedFood = food.copyWith(id: result);
+        Navigator.of(context).pop(savedFood);
       }
     } catch (e, stackTrace) {
       print('데이터 저장 중 오류 발생: $e');

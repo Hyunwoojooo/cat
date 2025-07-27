@@ -29,11 +29,14 @@ class _CatListScreenState extends State<CatListScreen> {
   final dio = Dio();
   final url = 'http://catlove.o-r.kr:4000/api/cat';
 
+  final String transmittedCatsKey = 'transmittedCats';
+
   @override
   void initState() {
     super.initState();
     print('=== tap_cat.dart initState 호출됨 ===');
     _loadCats();
+    _loadTransmittedCats();
   }
 
   Future<void> _loadCats() async {
@@ -56,6 +59,14 @@ class _CatListScreenState extends State<CatListScreen> {
     } catch (e) {
       print('고양이 데이터 로딩 오류: $e');
     }
+  }
+
+  Future<void> _loadTransmittedCats() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList(transmittedCatsKey) ?? [];
+    setState(() {
+      transmittedCats = ids.toSet();
+    });
   }
 
   void _addCat(Cat newCat) async {
@@ -109,10 +120,12 @@ class _CatListScreenState extends State<CatListScreen> {
   }
 
   // 전송 상태 초기화 (모든 고양이를 미전송 상태로)
-  void _resetTransmissionStatus() {
+  void _resetTransmissionStatus() async {
     setState(() {
       transmittedCats.clear();
     });
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove(transmittedCatsKey);
   }
 
   // 서버 전송 함수
@@ -208,6 +221,8 @@ class _CatListScreenState extends State<CatListScreen> {
       setState(() {
         transmittedCats.addAll(selectedCats);
       });
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setStringList(transmittedCatsKey, transmittedCats.toList());
 
       // 성공 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
@@ -425,7 +440,7 @@ class _CatListScreenState extends State<CatListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // 이미지 및 번호
-                        Container(
+                        SizedBox(
                           width: 90,
                           height: 90,
                           child: cat.image.startsWith('assets/')

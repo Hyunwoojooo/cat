@@ -23,12 +23,14 @@ class _FoodListScreenState extends State<FoodListScreen> {
 
   final dio = Dio();
   final url = 'http://catlove.o-r.kr:4000/api/food';
+  final String transmittedFoodsKey = 'transmittedFoods';
 
   @override
   void initState() {
     super.initState();
     print('=== tap_food.dart initState 호출됨 ===');
     _loadFoods();
+    _loadTransmittedFoods();
   }
 
   Future<void> _loadFoods() async {
@@ -51,6 +53,14 @@ class _FoodListScreenState extends State<FoodListScreen> {
     } catch (e) {
       print('급식 데이터 로딩 오류: $e');
     }
+  }
+
+  Future<void> _loadTransmittedFoods() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList(transmittedFoodsKey) ?? [];
+    setState(() {
+      transmittedFoods = ids.toSet();
+    });
   }
 
   void _addFood(Food newFood) async {
@@ -104,10 +114,12 @@ class _FoodListScreenState extends State<FoodListScreen> {
   }
 
   // 전송 상태 초기화 (모든 급식 정보를 미전송 상태로)
-  void _resetTransmissionStatus() {
+  void _resetTransmissionStatus() async {
     setState(() {
       transmittedFoods.clear();
     });
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove(transmittedFoodsKey);
   }
 
   // 서버 전송 함수
@@ -210,6 +222,8 @@ class _FoodListScreenState extends State<FoodListScreen> {
       setState(() {
         transmittedFoods.addAll(selectedFoods);
       });
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setStringList(transmittedFoodsKey, transmittedFoods.toList());
 
       // 성공 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
@@ -425,7 +439,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // 이미지
-                        Container(
+                        SizedBox(
                           width: 90,
                           height: 90,
                           child: Image.file(

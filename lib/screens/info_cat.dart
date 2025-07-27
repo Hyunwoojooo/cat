@@ -26,6 +26,8 @@ class InfoCat extends StatefulWidget {
 class _InfoCatState extends State<InfoCat> {
   final picker = ImagePicker();
   final TextEditingController _specialNotesController = TextEditingController();
+  final TextEditingController _detailLocationController =
+      TextEditingController();
   String? savedImagePath;
   String? moimTime = '';
   int furNumber = 0;
@@ -43,6 +45,10 @@ class _InfoCatState extends State<InfoCat> {
   String? selectedAge;
   String? selectedPattern;
   String? selectedDetailLocation;
+
+  // 중복 고양이 관련 변수 추가
+  Cat? _selectedDuplicateCat;
+  int isDuplicateValue = 0;
 
   // 기존 데이터를 저장할 변수들
   String? originalImagePath;
@@ -143,6 +149,7 @@ class _InfoCatState extends State<InfoCat> {
   @override
   void dispose() {
     _specialNotesController.dispose();
+    _detailLocationController.dispose();
     super.dispose();
   }
 
@@ -158,6 +165,11 @@ class _InfoCatState extends State<InfoCat> {
       selectedEyesColor = widget.cat.eyeColor ?? "선택";
       selectedPattern = widget.cat.pattern;
       selectedNeuteringValue = widget.cat.isNeutered ? "O" : "X";
+      selectedDetailLocation = widget.cat.detailLocation;
+      _detailLocationController.text = widget.cat.detailLocation ?? '';
+      // 중복 고양이 정보 초기화
+      _selectedDuplicateCat = null;
+      isDuplicateValue = widget.cat.isDuplicate ?? 0;
 
       // TextEditingController 설정
       _specialNotesController.text = widget.cat.specialNotes;
@@ -640,7 +652,9 @@ class _InfoCatState extends State<InfoCat> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 5, left: 10),
                       child: Text(
-                        "NO. ${widget.cat.catId}",
+                        _selectedDuplicateCat != null
+                            ? "NO. ${_selectedDuplicateCat!.catId}"
+                            : "NO. ${widget.cat.catId}",
                         style: TextStyle(
                           color: Colors.black87,
                           fontSize: 18,
@@ -648,6 +662,7 @@ class _InfoCatState extends State<InfoCat> {
                         ),
                       ),
                     ),
+                    _buildDuplicateSelector(),
                   ],
                 ),
 
@@ -671,6 +686,7 @@ class _InfoCatState extends State<InfoCat> {
                 _buildLabel("상세 주소"),
                 SizedBox(height: 4),
                 TextField(
+                  controller: _detailLocationController,
                   decoration: InputDecoration(
                     hintText: '상세 주소를 입력해주세요',
                     border: OutlineInputBorder(
@@ -862,7 +878,7 @@ class _InfoCatState extends State<InfoCat> {
         image: savedImagePath!,
         pattern: selectedPattern!,
         eyeColor: selectedEyesColor!,
-        isDuplicate: widget.cat.isDuplicate,
+        isDuplicate: isDuplicateValue,
       );
 
       await CatDatabase.instance.updateCat(updatedCat);
@@ -963,6 +979,101 @@ class _InfoCatState extends State<InfoCat> {
           ],
         ),
       ],
+    );
+  }
+
+  // 중복 고양이 선택/해제 UI
+  Widget _buildDuplicateSelector() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (_selectedDuplicateCat != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  backgroundColor: Colors.red.shade50,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _selectedDuplicateCat = null;
+                    isDuplicateValue = 0;
+                  });
+                },
+                child: Text(
+                  "해제",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.brown,
+              backgroundColor: Colors.brown[100],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            ),
+            onPressed: _showDuplicateSelector,
+            child: Text(
+              _selectedDuplicateCat != null
+                  ? "선택: No. ${_selectedDuplicateCat!.catId}"
+                  : "중복 고양이 선택",
+              style: TextStyle(
+                color: Colors.brown,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDuplicateSelector() async {
+    final cats = await CatDatabase.instance.getAllCats();
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return ListView.builder(
+          itemCount: cats.length,
+          itemBuilder: (context, index) {
+            final cat = cats[index];
+            return ListTile(
+              leading: cat.image.startsWith('assets/')
+                  ? Image.asset(cat.image, width: 40, height: 40)
+                  : Image.file(File(cat.image), width: 40, height: 40),
+              title: Text('No.${cat.catId}'),
+              subtitle: Text(cat.location),
+              onTap: () {
+                setState(() {
+                  _selectedDuplicateCat = cat;
+                  isDuplicateValue = 1;
+                });
+                Navigator.pop(context);
+                setState(() {});
+              },
+            );
+          },
+        );
+      },
     );
   }
 

@@ -26,6 +26,8 @@ class InfoFood extends StatefulWidget {
 class _InfoFoodState extends State<InfoFood> {
   final picker = ImagePicker();
   final TextEditingController _specialNotesController = TextEditingController();
+  final TextEditingController _detailLocationController =
+      TextEditingController();
   String? savedImagePath;
   String specialNotes = '';
   String? imageDateTime;
@@ -176,6 +178,7 @@ class _InfoFoodState extends State<InfoFood> {
   @override
   void dispose() {
     _specialNotesController.dispose();
+    _detailLocationController.dispose();
     super.dispose();
   }
 
@@ -185,6 +188,7 @@ class _InfoFoodState extends State<InfoFood> {
       imageDateTime = widget.food.discoveryTime;
       feedingSpotLocation = widget.food.feedingSpotLocation;
       detailLocation = widget.food.detailLocation;
+      _detailLocationController.text = widget.food.detailLocation ?? '';
       feedingMethod = widget.food.feedingMethod;
       cleanlinessRating = widget.food.cleanlinessRating;
       shelterCondition = widget.food.shelterCondition;
@@ -716,6 +720,7 @@ class _InfoFoodState extends State<InfoFood> {
                 _buildLabel("상세 주소"),
                 SizedBox(height: 4),
                 TextField(
+                  controller: _detailLocationController,
                   decoration: InputDecoration(
                     hintText: '상세 주소를 입력해주세요',
                     border: OutlineInputBorder(
@@ -727,7 +732,6 @@ class _InfoFoodState extends State<InfoFood> {
                       vertical: 14,
                     ),
                   ),
-                  controller: TextEditingController(text: detailLocation ?? ''),
                   onChanged: (v) => setState(() => detailLocation = v),
                 ),
                 SizedBox(height: 14),
