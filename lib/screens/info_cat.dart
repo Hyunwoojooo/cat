@@ -747,7 +747,7 @@ class _InfoCatState extends State<InfoCat> {
                   onChanged: (v) => setState(() => selectedEyesColor = v),
                 ),
                 SizedBox(height: 14),
-                _buildLabel("패턴"),
+                _buildPatternLabelWithHelp(),
                 SizedBox(height: 4),
                 _buildDropdown(
                   items: patternItems,
@@ -1096,5 +1096,42 @@ class _InfoCatState extends State<InfoCat> {
       print("formatDateTimeRegExp 오류: $e");
       return "입력 형식 오류";
     }
+  }
+
+  // 패턴 라벨 + 도움말 버튼
+  Widget _buildPatternLabelWithHelp() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildLabel("패턴"),
+        SizedBox(width: 4),
+        GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (_) => Dialog(
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Image.asset(
+                    'assets/info_cat.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            );
+          },
+          child: Icon(
+            Icons.help_outline,
+            color: Colors.grey,
+            size: 20,
+          ),
+        ),
+      ],
+    );
   }
 }

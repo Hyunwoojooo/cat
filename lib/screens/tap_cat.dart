@@ -31,6 +31,27 @@ class _CatListScreenState extends State<CatListScreen> {
 
   final String transmittedCatsKey = 'transmittedCats';
 
+  // 날짜 문자열을 ISO 8601 형식으로 변환하는 함수
+  String _convertToISODateTime(String dateTimeStr) {
+    try {
+      // "2025년01월30일 15시03분09초" → "2025-01-30T15:03:09"
+      final reg = RegExp(r"(\d{4})년(\d{2})월(\d{2})일 (\d{2})시(\d{2})분(\d{2})초");
+      final match = reg.firstMatch(dateTimeStr);
+      if (match != null) {
+        final year = match.group(1);
+        final month = match.group(2);
+        final day = match.group(3);
+        final hour = match.group(4);
+        final minute = match.group(5);
+        final second = match.group(6);
+        return "$year-$month-$day $hour:$minute:$second";
+      }
+      return dateTimeStr; // 변환 실패 시 원본 반환
+    } catch (e) {
+      return dateTimeStr;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -174,7 +195,7 @@ class _CatListScreenState extends State<CatListScreen> {
 
         final requestDto = {
           "userId": userId ?? "unknown",
-          "keyDiscoveryTime": cat.keyDiscoveryTime,
+          "keyDiscoveryTime": _convertToISODateTime(cat.keyDiscoveryTime),
           "catId": "$userId-${cat.catId}",
           "location": cat.location,
           "detailLocation": cat.detailLocation,
@@ -281,12 +302,6 @@ class _CatListScreenState extends State<CatListScreen> {
                   onPressed: _loadCats,
                   tooltip: '목록 새로고침',
                 ),
-                if (transmittedCats.isNotEmpty)
-                  IconButton(
-                    icon: Icon(Icons.refresh, color: Colors.blue),
-                    onPressed: _resetTransmissionStatus,
-                    tooltip: '전송 상태 초기화',
-                  ),
               ],
             ),
       floatingActionButton: FloatingActionButton.extended(

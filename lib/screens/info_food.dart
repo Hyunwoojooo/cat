@@ -436,14 +436,6 @@ class _InfoFoodState extends State<InfoFood> {
 
   Future<void> _showImagePicker() async {
     try {
-      // 안드로이드에서 권한 요청
-      if (Platform.isAndroid) {
-        bool hasPermissions = await _requestPermissions();
-        if (!hasPermissions) {
-          return; // 권한이 없으면 이미지 선택을 중단
-        }
-      }
-
       final XFile? pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 30,

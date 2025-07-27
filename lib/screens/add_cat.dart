@@ -991,7 +991,7 @@ class _AddCatState extends State<AddCat> {
         _buildLabel("패턴"),
         SizedBox(width: 4),
         GestureDetector(
-          onLongPress: () {
+          onTap: () {
             showDialog(
               context: context,
               builder: (_) => Dialog(

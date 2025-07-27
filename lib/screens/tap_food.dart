@@ -25,6 +25,27 @@ class _FoodListScreenState extends State<FoodListScreen> {
   final url = 'http://catlove.o-r.kr:4000/api/food';
   final String transmittedFoodsKey = 'transmittedFoods';
 
+  // 날짜 문자열을 ISO 8601 형식으로 변환하는 함수
+  String _convertToISODateTime(String dateTimeStr) {
+    try {
+      // "2025년01월30일 15시03분09초" → "2025-01-30 15:03:09"
+      final reg = RegExp(r"(\d{4})년(\d{2})월(\d{2})일 (\d{2})시(\d{2})분(\d{2})초");
+      final match = reg.firstMatch(dateTimeStr);
+      if (match != null) {
+        final year = match.group(1);
+        final month = match.group(2);
+        final day = match.group(3);
+        final hour = match.group(4);
+        final minute = match.group(5);
+        final second = match.group(6);
+        return "$year-$month-$day $hour:$minute:$second";
+      }
+      return dateTimeStr; // 변환 실패 시 원본 반환
+    } catch (e) {
+      return dateTimeStr;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -172,7 +193,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
         final requestDto = {
           "userId": userId ?? "unknown",
           "feedingSpotId": "$userId-$feedingSpotId",
-          "discoveryTime": food.discoveryTime,
+          "discoveryTime": _convertToISODateTime(food.discoveryTime),
           "feedingSpotLocation": food.feedingSpotLocation,
           "detailLocation": food.detailLocation,
           "feedingMethod": food.feedingMethod,
@@ -282,12 +303,6 @@ class _FoodListScreenState extends State<FoodListScreen> {
                   onPressed: _loadFoods,
                   tooltip: '목록 새로고침',
                 ),
-                if (transmittedFoods.isNotEmpty)
-                  IconButton(
-                    icon: Icon(Icons.refresh, color: Colors.blue),
-                    onPressed: _resetTransmissionStatus,
-                    tooltip: '전송 상태 초기화',
-                  ),
               ],
             ),
       floatingActionButton: FloatingActionButton.extended(
