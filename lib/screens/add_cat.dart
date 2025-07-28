@@ -13,6 +13,7 @@ import 'package:exif/exif.dart';
 import 'package:path_provider/path_provider.dart';
 import 'home_screen.dart';
 import 'package:cat_project/components/colors.dart';
+import 'package:cat_project/components/components.dart';
 
 class AddCat extends StatefulWidget {
   final int number;
@@ -63,10 +64,6 @@ class _AddCatState extends State<AddCat> {
     "12. 점무늬",
     "13. 태비",
   ];
-
-  // Kakao Maps API 키를 상수로 정의
-  static const String KAKAO_API_KEY =
-      '4faeb42201cf02a0d3555f161c3879ad'; // TODO: 실제 API 키로 교체 필요
 
   Widget _buildLabel(String text) {
     return Padding(

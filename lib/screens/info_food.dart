@@ -13,6 +13,7 @@ import 'package:exif/exif.dart';
 import 'package:path_provider/path_provider.dart';
 import 'home_screen.dart';
 import 'package:cat_project/components/colors.dart';
+import 'package:cat_project/components/components.dart';
 
 class InfoFood extends StatefulWidget {
   final Food food;
@@ -105,10 +106,6 @@ class _InfoFoodState extends State<InfoFood> {
     "3. 사람 음식물",
     "4. 확인 불가"
   ];
-
-  // Kakao Maps API 키를 상수로 정의
-  static const String KAKAO_API_KEY =
-      '4faeb42201cf02a0d3555f161c3879ad'; // TODO: 실제 API 키로 교체 필요
 
   @override
   void initState() {

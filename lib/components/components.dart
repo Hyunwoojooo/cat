@@ -1,0 +1,1 @@
+const String KAKAO_API_KEY = 'ac56c88da48739e4de85968fa22186b9';

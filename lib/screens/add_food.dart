@@ -9,6 +9,7 @@ import 'package:exif/exif.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'home_screen.dart';
+import 'package:cat_project/components/components.dart';
 
 class AddFood extends StatefulWidget {
   const AddFood({super.key});
@@ -36,7 +37,6 @@ class _AddFoodState extends State<AddFood> {
   String? selectedFoodRemain;
   String? selectedWaterRemain;
   String? selectedFoodType;
-  static const String KAKAO_API_KEY = '4faeb42201cf02a0d3555f161c3879ad';
 
   // 드롭다운 아이템 리스트
   final List<String> feedingMethodItems = [
