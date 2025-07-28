@@ -29,11 +29,35 @@ class _CatListScreenState extends State<CatListScreen> {
   final dio = Dio();
   final url = 'http://catlove.o-r.kr:4000/api/cat';
 
+  final String transmittedCatsKey = 'transmittedCats';
+
+  // 날짜 문자열을 ISO 8601 형식으로 변환하는 함수
+  String _convertToISODateTime(String dateTimeStr) {
+    try {
+      // "2025년01월30일 15시03분09초" → "2025-01-30T15:03:09"
+      final reg = RegExp(r"(\d{4})년(\d{2})월(\d{2})일 (\d{2})시(\d{2})분(\d{2})초");
+      final match = reg.firstMatch(dateTimeStr);
+      if (match != null) {
+        final year = match.group(1);
+        final month = match.group(2);
+        final day = match.group(3);
+        final hour = match.group(4);
+        final minute = match.group(5);
+        final second = match.group(6);
+        return "$year-$month-$day $hour:$minute:$second";
+      }
+      return dateTimeStr; // 변환 실패 시 원본 반환
+    } catch (e) {
+      return dateTimeStr;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     print('=== tap_cat.dart initState 호출됨 ===');
     _loadCats();
+    _loadTransmittedCats();
   }
 
   Future<void> _loadCats() async {
@@ -56,6 +80,14 @@ class _CatListScreenState extends State<CatListScreen> {
     } catch (e) {
       print('고양이 데이터 로딩 오류: $e');
     }
+  }
+
+  Future<void> _loadTransmittedCats() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList(transmittedCatsKey) ?? [];
+    setState(() {
+      transmittedCats = ids.toSet();
+    });
   }
 
   void _addCat(Cat newCat) async {
@@ -109,10 +141,12 @@ class _CatListScreenState extends State<CatListScreen> {
   }
 
   // 전송 상태 초기화 (모든 고양이를 미전송 상태로)
-  void _resetTransmissionStatus() {
+  void _resetTransmissionStatus() async {
     setState(() {
       transmittedCats.clear();
     });
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove(transmittedCatsKey);
   }
 
   // 서버 전송 함수
@@ -161,7 +195,7 @@ class _CatListScreenState extends State<CatListScreen> {
 
         final requestDto = {
           "userId": userId ?? "unknown",
-          "keyDiscoveryTime": cat.keyDiscoveryTime,
+          "keyDiscoveryTime": _convertToISODateTime(cat.keyDiscoveryTime),
           "catId": "$userId-${cat.catId}",
           "location": cat.location,
           "detailLocation": cat.detailLocation,
@@ -208,6 +242,8 @@ class _CatListScreenState extends State<CatListScreen> {
       setState(() {
         transmittedCats.addAll(selectedCats);
       });
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setStringList(transmittedCatsKey, transmittedCats.toList());
 
       // 성공 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
@@ -266,12 +302,6 @@ class _CatListScreenState extends State<CatListScreen> {
                   onPressed: _loadCats,
                   tooltip: '목록 새로고침',
                 ),
-                if (transmittedCats.isNotEmpty)
-                  IconButton(
-                    icon: Icon(Icons.refresh, color: Colors.blue),
-                    onPressed: _resetTransmissionStatus,
-                    tooltip: '전송 상태 초기화',
-                  ),
               ],
             ),
       floatingActionButton: FloatingActionButton.extended(
@@ -425,7 +455,7 @@ class _CatListScreenState extends State<CatListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // 이미지 및 번호
-                        Container(
+                        SizedBox(
                           width: 90,
                           height: 90,
                           child: cat.image.startsWith('assets/')

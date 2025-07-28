@@ -11,9 +11,9 @@ import '../database/cat_db.dart';
 import '../models/cat.dart';
 import 'package:exif/exif.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'home_screen.dart';
 import 'package:cat_project/components/colors.dart';
-import 'package:cat_project/components/components.dart';
 
 class AddCat extends StatefulWidget {
   final int number;
@@ -64,6 +64,72 @@ class _AddCatState extends State<AddCat> {
     "12. 점무늬",
     "13. 태비",
   ];
+
+  // Kakao Maps API 키를 상수로 정의
+  static const String KAKAO_API_KEY =
+      '4faeb42201cf02a0d3555f161c3879ad'; // TODO: 실제 API 키로 교체 필요
+
+  // 권한 요청 함수
+  Future<bool> _requestPermissions() async {
+    if (Platform.isAndroid) {
+      print('=== 권한 확인 시작 ===');
+
+      try {
+        // 위치 권한만 확인 (이미지 읽기는 권한이 필요하지 않음)
+        PermissionStatus locationStatus = await Permission.location.status;
+        print('현재 위치 권한 상태: $locationStatus');
+
+        // 위치 권한이 이미 허용되어 있는지 확인
+        if (locationStatus.isGranted) {
+          print('위치 권한이 이미 허용되어 있습니다.');
+          return true;
+        }
+
+        // 위치 권한만 요청
+        print('위치 권한 요청 중...');
+        PermissionStatus result = await Permission.location.request();
+        print('위치 권한 요청 후 상태: $result');
+
+        if (result.isGranted) {
+          print('위치 권한이 허용되었습니다.');
+          return true;
+        } else {
+          print('위치 권한이 거부되었습니다.');
+          // 권한이 거부된 경우 사용자에게 설명
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('위치 권한 필요'),
+                  content: Text(
+                      '이미지의 GPS 위치 정보를 읽기 위해서는 위치 권한이 필요합니다. 설정에서 위치 권한을 허용해주세요.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        openAppSettings();
+                      },
+                      child: Text('설정으로 이동'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+          return false;
+        }
+      } catch (e) {
+        print('권한 요청 중 오류 발생: $e');
+        return false;
+      }
+    }
+    return true;
+  }
 
   Widget _buildLabel(String text) {
     return Padding(
@@ -118,7 +184,7 @@ class _AddCatState extends State<AddCat> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 14),
       decoration: BoxDecoration(
         color: color ?? Colors.grey.shade100,
         borderRadius: BorderRadius.circular(10),
@@ -126,12 +192,12 @@ class _AddCatState extends State<AddCat> {
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey.shade600, size: 20),
-          const SizedBox(width: 8),
+          Icon(icon, color: Colors.grey.shade600, size: 16),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 15, color: Colors.black87),
+              style: TextStyle(fontSize: 14, color: Colors.black87),
             ),
           ),
         ],
@@ -235,8 +301,7 @@ class _AddCatState extends State<AddCat> {
   Future<String?> _saveImageToAppDirectory(XFile imageFile) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String fileName =
-          DateTime.now().millisecondsSinceEpoch.toString() + '.jpg';
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String filePath = '${appDir.path}/$fileName';
       final File newImage = await File(imageFile.path).copy(filePath);
       return newImage.path;
@@ -284,6 +349,11 @@ class _AddCatState extends State<AddCat> {
 
   Future<void> _showImagePicker() async {
     try {
+      if (Platform.isAndroid) {
+        await Permission.storage.request();
+        await Permission.photos.request(); // Android 13+
+      }
+
       final XFile? pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 30,
@@ -291,21 +361,29 @@ class _AddCatState extends State<AddCat> {
         maxHeight: 1024,
       );
 
-      if (pickedFile != null) {
-        final String? savedPath = await _saveImageToAppDirectory(pickedFile);
-        if (savedPath != null) {
-          // EXIF 데이터 먼저 읽고, 그 결과를 setState에서 한 번에 반영
-          final exifResult = await _readExifDataForState(savedPath);
-          setState(() {
-            savedImagePath = savedPath;
-            imageDateTime = formatDateTimeRegExp(exifResult['imageDateTime']);
-            locationName = exifResult['locationName'];
-            latitude = exifResult['latitude'];
-            longitude = exifResult['longitude'];
-          });
-        }
-      } else {
+      if (pickedFile == null) {
         print('이미지가 선택되지 않았습니다.');
+        return;
+      }
+
+      final file = File(pickedFile.path);
+      if (!file.existsSync()) {
+        print('선택한 이미지 파일이 존재하지 않습니다: ${pickedFile.path}');
+        return;
+      }
+
+      // 이후 저장 및 setState
+      final String? savedPath = await _saveImageToAppDirectory(pickedFile);
+      if (savedPath != null) {
+        // EXIF 데이터 먼저 읽고, 그 결과를 setState에서 한 번에 반영
+        final exifResult = await _readExifDataForState(savedPath);
+        setState(() {
+          savedImagePath = savedPath;
+          imageDateTime = formatDateTimeRegExp(exifResult['imageDateTime']);
+          locationName = exifResult['locationName'];
+          latitude = exifResult['latitude'];
+          longitude = exifResult['longitude'];
+        });
       }
     } catch (e) {
       print('이미지 선택 중 오류 발생: $e');
@@ -328,7 +406,13 @@ class _AddCatState extends State<AddCat> {
       final bytes = await File(imagePath).readAsBytes();
       final exifData = await readExifFromBytes(bytes);
 
+      print('=== EXIF 데이터 읽기 시작 ===');
+      print('이미지 경로: $imagePath');
+      print('EXIF 데이터 키들: ${exifData.keys.toList()}');
+      print('플랫폼: ${Platform.operatingSystem}');
+
       if (exifData.isEmpty) {
+        print('EXIF 데이터가 없습니다.');
         return {
           'imageDateTime': null,
           'locationName': null,
@@ -337,45 +421,102 @@ class _AddCatState extends State<AddCat> {
         };
       }
 
-      // 날짜/시간 정보 읽기
+      // 날짜/시간 정보 읽기 (여러 형식 시도)
       if (exifData.containsKey('EXIF DateTimeOriginal')) {
         final dateTimeStr = exifData['EXIF DateTimeOriginal']?.printable;
-        print("--------------------------------");
-        print('EXIF dateTimeStr: $dateTimeStr');
-        print("dataTimeStr: ${dateTimeStr.runtimeType}");
+        print('EXIF DateTimeOriginal: $dateTimeStr');
+        newImageDateTime = dateTimeStr;
+      } else if (exifData.containsKey('Image DateTime')) {
+        final dateTimeStr = exifData['Image DateTime']?.printable;
+        print('Image DateTime: $dateTimeStr');
+        newImageDateTime = dateTimeStr;
+      } else if (exifData.containsKey('EXIF DateTime')) {
+        final dateTimeStr = exifData['EXIF DateTime']?.printable;
+        print('EXIF DateTime: $dateTimeStr');
         newImageDateTime = dateTimeStr;
       }
-      print("--------------------------------");
-      print('newImageDateTime: $newImageDateTime');
 
-      // GPS 정보 읽기
+      // GPS 정보 읽기 (더 안전한 방식)
+      bool hasGpsData = false;
+
+      print('=== EXIF DATA START ===');
+      exifData.forEach((key, value) {
+        print('$key: ${value.printable}');
+      });
+      print('=== EXIF DATA END ===');
+
+      if (exifData.isEmpty) {
+        print('EXIF 데이터가 비어 있습니다.');
+        return {
+          'imageDateTime': null,
+          'locationName': null,
+          'latitude': null,
+          'longitude': null,
+        };
+      }
+      // GPS 위도/경도 확인
       if (exifData.containsKey('GPS GPSLatitude') &&
           exifData.containsKey('GPS GPSLongitude')) {
-        final latValue = exifData['GPS GPSLatitude']!;
-        final lonValue = exifData['GPS GPSLongitude']!;
-        final latRef = exifData['GPS GPSLatitudeRef']?.printable;
-        final lonRef = exifData['GPS GPSLongitudeRef']?.printable;
+        hasGpsData = true;
+        print('GPS 데이터 발견');
 
-        newLatitude = _convertGpsToDecimal(
-          latValue.values.toList().cast<Ratio>(),
-        );
-        newLongitude = _convertGpsToDecimal(
-          lonValue.values.toList().cast<Ratio>(),
-        );
+        try {
+          final latValue = exifData['GPS GPSLatitude']!;
+          final lonValue = exifData['GPS GPSLongitude']!;
+          final latRef = exifData['GPS GPSLatitudeRef']?.printable;
+          final lonRef = exifData['GPS GPSLongitudeRef']?.printable;
 
-        if (latRef == 'S') newLatitude = -newLatitude!;
-        if (lonRef == 'W') newLongitude = -newLongitude!;
+          print('GPS 위도 값: $latValue');
+          print('GPS 경도 값: $lonValue');
+          print('GPS 위도 참조: $latRef');
+          print('GPS 경도 참조: $lonRef');
 
-        // 위도/경도를 도로명 주소로 변환
-        if (newLatitude != null && newLongitude != null) {
-          final address = await _getAddressFromCoordinates(
-            newLatitude,
-            newLongitude,
-          );
-          newLocationName = address ??
-              '위도: ${newLatitude.toStringAsFixed(4)}, 경도: ${newLongitude.toStringAsFixed(4)}';
+          // 값이 Ratio 리스트인지 확인
+          if (latValue.values.length > 0 && lonValue.values.length > 0) {
+            newLatitude = _convertGpsToDecimal(
+              latValue.values.toList().cast<Ratio>(),
+            );
+            newLongitude = _convertGpsToDecimal(
+              lonValue.values.toList().cast<Ratio>(),
+            );
+
+            print('변환된 위도: $newLatitude');
+            print('변환된 경도: $newLongitude');
+
+            // 남반구/서반구 처리
+            if (latRef == 'S') newLatitude = -newLatitude;
+            if (lonRef == 'W') newLongitude = -newLongitude;
+
+            print('최종 위도: $newLatitude');
+            print('최종 경도: $newLongitude');
+
+            // 위도/경도를 도로명 주소로 변환
+            final address = await _getAddressFromCoordinates(
+              newLatitude,
+              newLongitude,
+            );
+            newLocationName = address ??
+                '위도: ${newLatitude.toStringAsFixed(4)}, 경도: ${newLongitude.toStringAsFixed(4)}';
+            print('변환된 주소: $newLocationName');
+          } else {
+            print('GPS 값이 비어있습니다.');
+          }
+        } catch (e) {
+          print('GPS 데이터 변환 오류: $e');
         }
+      } else {
+        print('GPS 데이터가 없습니다.');
+        // GPS 관련 키들 출력
+        exifData.keys.where((key) => key.contains('GPS')).forEach((key) {
+          print('GPS 관련 키: $key = ${exifData[key]?.printable}');
+        });
       }
+
+      print('=== EXIF 데이터 읽기 완료 ===');
+      print('날짜/시간: $newImageDateTime');
+      print('위치: $newLocationName');
+      print('위도: $newLatitude');
+      print('경도: $newLongitude');
 
       return {
         'imageDateTime': newImageDateTime,
@@ -385,6 +526,7 @@ class _AddCatState extends State<AddCat> {
       };
     } catch (e) {
       print('EXIF 데이터 읽기 오류: $e');
+      print('스택 트레이스: ${StackTrace.current}');
       return {
         'imageDateTime': null,
         'locationName': null,
@@ -528,7 +670,7 @@ class _AddCatState extends State<AddCat> {
                   onChanged: (v) => setState(() => selectedEyesColor = v),
                 ),
                 SizedBox(height: 14),
-                _buildLabel("패턴"),
+                _buildPatternLabelWithHelp(),
                 SizedBox(height: 4),
                 _buildDropdown(
                   items: patternItems,
@@ -839,5 +981,42 @@ class _AddCatState extends State<AddCat> {
       print("formatDateTimeRegExp 오류: $e");
       return "입력 형식 오류";
     }
+  }
+
+  // 패턴 라벨 + 도움말 버튼
+  Widget _buildPatternLabelWithHelp() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildLabel("패턴"),
+        SizedBox(width: 4),
+        GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (_) => Dialog(
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Image.asset(
+                    'assets/info_cat.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            );
+          },
+          child: Icon(
+            Icons.help_outline,
+            color: Colors.grey,
+            size: 20,
+          ),
+        ),
+      ],
+    );
   }
 }

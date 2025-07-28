@@ -11,9 +11,9 @@ import '../database/cat_db.dart';
 import '../models/cat.dart';
 import 'package:exif/exif.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'home_screen.dart';
 import 'package:cat_project/components/colors.dart';
-import 'package:cat_project/components/components.dart';
 
 class InfoCat extends StatefulWidget {
   final Cat cat;
@@ -26,6 +26,8 @@ class InfoCat extends StatefulWidget {
 class _InfoCatState extends State<InfoCat> {
   final picker = ImagePicker();
   final TextEditingController _specialNotesController = TextEditingController();
+  final TextEditingController _detailLocationController =
+      TextEditingController();
   String? savedImagePath;
   String? moimTime = '';
   int furNumber = 0;
@@ -43,6 +45,10 @@ class _InfoCatState extends State<InfoCat> {
   String? selectedAge;
   String? selectedPattern;
   String? selectedDetailLocation;
+
+  // 중복 고양이 관련 변수 추가
+  Cat? _selectedDuplicateCat;
+  int isDuplicateValue = 0;
 
   // 기존 데이터를 저장할 변수들
   String? originalImagePath;
@@ -74,6 +80,66 @@ class _InfoCatState extends State<InfoCat> {
     "13. 태비",
   ];
 
+  // Kakao Maps API 키를 상수로 정의
+  static const String KAKAO_API_KEY =
+      '4faeb42201cf02a0d3555f161c3879ad'; // TODO: 실제 API 키로 교체 필요
+
+  // 권한 요청 함수
+  Future<bool> _requestPermissions() async {
+    if (Platform.isAndroid) {
+      print('=== 권한 확인 시작 ===');
+
+      // 위치 권한만 확인 (이미지 읽기는 권한이 필요하지 않음)
+      PermissionStatus locationStatus = await Permission.location.status;
+      print('현재 위치 권한 상태: $locationStatus');
+
+      // 위치 권한이 이미 허용되어 있는지 확인
+      if (locationStatus.isGranted) {
+        print('위치 권한이 이미 허용되어 있습니다.');
+        return true;
+      }
+
+      // 위치 권한만 요청
+      PermissionStatus result = await Permission.location.request();
+      print('위치 권한 요청 후 상태: $result');
+
+      if (result.isGranted) {
+        print('위치 권한이 허용되었습니다.');
+        return true;
+      } else {
+        print('위치 권한이 거부되었습니다.');
+        // 권한이 거부된 경우 사용자에게 설명
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('위치 권한 필요'),
+                content: Text(
+                    '이미지의 GPS 위치 정보를 읽기 위해서는 위치 권한이 필요합니다. 설정에서 위치 권한을 허용해주세요.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('취소'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      openAppSettings();
+                    },
+                    child: Text('설정으로 이동'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -83,6 +149,7 @@ class _InfoCatState extends State<InfoCat> {
   @override
   void dispose() {
     _specialNotesController.dispose();
+    _detailLocationController.dispose();
     super.dispose();
   }
 
@@ -98,6 +165,11 @@ class _InfoCatState extends State<InfoCat> {
       selectedEyesColor = widget.cat.eyeColor ?? "선택";
       selectedPattern = widget.cat.pattern;
       selectedNeuteringValue = widget.cat.isNeutered ? "O" : "X";
+      selectedDetailLocation = widget.cat.detailLocation;
+      _detailLocationController.text = widget.cat.detailLocation ?? '';
+      // 중복 고양이 정보 초기화
+      _selectedDuplicateCat = null;
+      isDuplicateValue = widget.cat.isDuplicate ?? 0;
 
       // TextEditingController 설정
       _specialNotesController.text = widget.cat.specialNotes;
@@ -284,8 +356,7 @@ class _InfoCatState extends State<InfoCat> {
   Future<String?> _saveImageToAppDirectory(XFile imageFile) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String fileName =
-          DateTime.now().millisecondsSinceEpoch.toString() + '.jpg';
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String filePath = '${appDir.path}/$fileName';
       final File newImage = await File(imageFile.path).copy(filePath);
       return newImage.path;
@@ -333,6 +404,14 @@ class _InfoCatState extends State<InfoCat> {
 
   Future<void> _showImagePicker() async {
     try {
+      // 안드로이드에서 권한 요청
+      if (Platform.isAndroid) {
+        bool hasPermissions = await _requestPermissions();
+        if (!hasPermissions) {
+          return; // 권한이 없으면 이미지 선택을 중단
+        }
+      }
+
       final XFile? pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 30,
@@ -377,7 +456,13 @@ class _InfoCatState extends State<InfoCat> {
       final bytes = await File(imagePath).readAsBytes();
       final exifData = await readExifFromBytes(bytes);
 
+      print('=== EXIF 데이터 읽기 시작 ===');
+      print('이미지 경로: $imagePath');
+      print('EXIF 데이터 키들: ${exifData.keys.toList()}');
+      print('플랫폼: ${Platform.operatingSystem}');
+
       if (exifData.isEmpty) {
+        print('EXIF 데이터가 없습니다.');
         return {
           'imageDateTime': null,
           'locationName': null,
@@ -386,45 +471,87 @@ class _InfoCatState extends State<InfoCat> {
         };
       }
 
-      // 날짜/시간 정보 읽기
+      // 날짜/시간 정보 읽기 (여러 형식 시도)
       if (exifData.containsKey('EXIF DateTimeOriginal')) {
         final dateTimeStr = exifData['EXIF DateTimeOriginal']?.printable;
-        print("--------------------------------");
-        print('EXIF dateTimeStr: $dateTimeStr');
-        print("dataTimeStr: ${dateTimeStr.runtimeType}");
+        print('EXIF DateTimeOriginal: $dateTimeStr');
+        newImageDateTime = dateTimeStr;
+      } else if (exifData.containsKey('Image DateTime')) {
+        final dateTimeStr = exifData['Image DateTime']?.printable;
+        print('Image DateTime: $dateTimeStr');
+        newImageDateTime = dateTimeStr;
+      } else if (exifData.containsKey('EXIF DateTime')) {
+        final dateTimeStr = exifData['EXIF DateTime']?.printable;
+        print('EXIF DateTime: $dateTimeStr');
         newImageDateTime = dateTimeStr;
       }
-      print("--------------------------------");
-      print('newImageDateTime: $newImageDateTime');
 
-      // GPS 정보 읽기
+      // GPS 정보 읽기 (더 안전한 방식)
+      bool hasGpsData = false;
+
+      // GPS 위도/경도 확인
       if (exifData.containsKey('GPS GPSLatitude') &&
           exifData.containsKey('GPS GPSLongitude')) {
-        final latValue = exifData['GPS GPSLatitude']!;
-        final lonValue = exifData['GPS GPSLongitude']!;
-        final latRef = exifData['GPS GPSLatitudeRef']?.printable;
-        final lonRef = exifData['GPS GPSLongitudeRef']?.printable;
+        hasGpsData = true;
+        print('GPS 데이터 발견');
 
-        newLatitude = _convertGpsToDecimal(
-          latValue.values.toList().cast<Ratio>(),
-        );
-        newLongitude = _convertGpsToDecimal(
-          lonValue.values.toList().cast<Ratio>(),
-        );
+        try {
+          final latValue = exifData['GPS GPSLatitude']!;
+          final lonValue = exifData['GPS GPSLongitude']!;
+          final latRef = exifData['GPS GPSLatitudeRef']?.printable;
+          final lonRef = exifData['GPS GPSLongitudeRef']?.printable;
 
-        if (latRef == 'S') newLatitude = -newLatitude!;
-        if (lonRef == 'W') newLongitude = -newLongitude!;
+          print('GPS 위도 값: $latValue');
+          print('GPS 경도 값: $lonValue');
+          print('GPS 위도 참조: $latRef');
+          print('GPS 경도 참조: $lonRef');
 
-        // 위도/경도를 도로명 주소로 변환
-        if (newLatitude != null && newLongitude != null) {
-          final address = await _getAddressFromCoordinates(
-            newLatitude,
-            newLongitude,
-          );
-          newLocationName = address ??
-              '위도: ${newLatitude.toStringAsFixed(4)}, 경도: ${newLongitude.toStringAsFixed(4)}';
+          // 값이 Ratio 리스트인지 확인
+          if (latValue.values.length > 0 && lonValue.values.length > 0) {
+            newLatitude = _convertGpsToDecimal(
+              latValue.values.toList().cast<Ratio>(),
+            );
+            newLongitude = _convertGpsToDecimal(
+              lonValue.values.toList().cast<Ratio>(),
+            );
+
+            print('변환된 위도: $newLatitude');
+            print('변환된 경도: $newLongitude');
+
+            // 남반구/서반구 처리
+            if (latRef == 'S') newLatitude = -newLatitude;
+            if (lonRef == 'W') newLongitude = -newLongitude;
+
+            print('최종 위도: $newLatitude');
+            print('최종 경도: $newLongitude');
+
+            // 위도/경도를 도로명 주소로 변환
+            final address = await _getAddressFromCoordinates(
+              newLatitude,
+              newLongitude,
+            );
+            newLocationName = address ??
+                '위도: ${newLatitude.toStringAsFixed(4)}, 경도: ${newLongitude.toStringAsFixed(4)}';
+            print('변환된 주소: $newLocationName');
+          } else {
+            print('GPS 값이 비어있습니다.');
+          }
+        } catch (e) {
+          print('GPS 데이터 변환 오류: $e');
         }
+      } else {
+        print('GPS 데이터가 없습니다.');
+        // GPS 관련 키들 출력
+        exifData.keys.where((key) => key.contains('GPS')).forEach((key) {
+          print('GPS 관련 키: $key = ${exifData[key]?.printable}');
+        });
       }
+
+      print('=== EXIF 데이터 읽기 완료 ===');
+      print('날짜/시간: $newImageDateTime');
+      print('위치: $newLocationName');
+      print('위도: $newLatitude');
+      print('경도: $newLongitude');
 
       return {
         'imageDateTime': newImageDateTime,
@@ -434,6 +561,7 @@ class _InfoCatState extends State<InfoCat> {
       };
     } catch (e) {
       print('EXIF 데이터 읽기 오류: $e');
+      print('스택 트레이스: ${StackTrace.current}');
       return {
         'imageDateTime': null,
         'locationName': null,
@@ -524,7 +652,9 @@ class _InfoCatState extends State<InfoCat> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 5, left: 10),
                       child: Text(
-                        "NO. ${widget.cat.catId}",
+                        _selectedDuplicateCat != null
+                            ? "NO. ${_selectedDuplicateCat!.catId}"
+                            : "NO. ${widget.cat.catId}",
                         style: TextStyle(
                           color: Colors.black87,
                           fontSize: 18,
@@ -532,6 +662,7 @@ class _InfoCatState extends State<InfoCat> {
                         ),
                       ),
                     ),
+                    _buildDuplicateSelector(),
                   ],
                 ),
 
@@ -555,6 +686,7 @@ class _InfoCatState extends State<InfoCat> {
                 _buildLabel("상세 주소"),
                 SizedBox(height: 4),
                 TextField(
+                  controller: _detailLocationController,
                   decoration: InputDecoration(
                     hintText: '상세 주소를 입력해주세요',
                     border: OutlineInputBorder(
@@ -615,7 +747,7 @@ class _InfoCatState extends State<InfoCat> {
                   onChanged: (v) => setState(() => selectedEyesColor = v),
                 ),
                 SizedBox(height: 14),
-                _buildLabel("패턴"),
+                _buildPatternLabelWithHelp(),
                 SizedBox(height: 4),
                 _buildDropdown(
                   items: patternItems,
@@ -746,7 +878,7 @@ class _InfoCatState extends State<InfoCat> {
         image: savedImagePath!,
         pattern: selectedPattern!,
         eyeColor: selectedEyesColor!,
-        isDuplicate: widget.cat.isDuplicate,
+        isDuplicate: isDuplicateValue,
       );
 
       await CatDatabase.instance.updateCat(updatedCat);
@@ -850,6 +982,101 @@ class _InfoCatState extends State<InfoCat> {
     );
   }
 
+  // 중복 고양이 선택/해제 UI
+  Widget _buildDuplicateSelector() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (_selectedDuplicateCat != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  backgroundColor: Colors.red.shade50,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _selectedDuplicateCat = null;
+                    isDuplicateValue = 0;
+                  });
+                },
+                child: Text(
+                  "해제",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.brown,
+              backgroundColor: Colors.brown[100],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            ),
+            onPressed: _showDuplicateSelector,
+            child: Text(
+              _selectedDuplicateCat != null
+                  ? "선택: No. ${_selectedDuplicateCat!.catId}"
+                  : "중복 고양이 선택",
+              style: TextStyle(
+                color: Colors.brown,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDuplicateSelector() async {
+    final cats = await CatDatabase.instance.getAllCats();
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return ListView.builder(
+          itemCount: cats.length,
+          itemBuilder: (context, index) {
+            final cat = cats[index];
+            return ListTile(
+              leading: cat.image.startsWith('assets/')
+                  ? Image.asset(cat.image, width: 40, height: 40)
+                  : Image.file(File(cat.image), width: 40, height: 40),
+              title: Text('No.${cat.catId}'),
+              subtitle: Text(cat.location),
+              onTap: () {
+                setState(() {
+                  _selectedDuplicateCat = cat;
+                  isDuplicateValue = 1;
+                });
+                Navigator.pop(context);
+                setState(() {});
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
   // 날짜 데이터 형식 변환
   String formatDateTimeRegExp(String inputDateTime) {
     try {
@@ -869,5 +1096,42 @@ class _InfoCatState extends State<InfoCat> {
       print("formatDateTimeRegExp 오류: $e");
       return "입력 형식 오류";
     }
+  }
+
+  // 패턴 라벨 + 도움말 버튼
+  Widget _buildPatternLabelWithHelp() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildLabel("패턴"),
+        SizedBox(width: 4),
+        GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (_) => Dialog(
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Image.asset(
+                    'assets/info_cat.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            );
+          },
+          child: Icon(
+            Icons.help_outline,
+            color: Colors.grey,
+            size: 20,
+          ),
+        ),
+      ],
+    );
   }
 }
