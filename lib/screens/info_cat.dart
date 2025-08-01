@@ -196,7 +196,7 @@ class _InfoCatState extends State<InfoCat> {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: B_1,
         ),
       ),
     );
@@ -210,9 +210,9 @@ class _InfoCatState extends State<InfoCat> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.grey.shade50,
+        border: Border.all(color: B_4),
+        borderRadius: BorderRadius.circular(40),
+        color: P_3,
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -220,13 +220,25 @@ class _InfoCatState extends State<InfoCat> {
           value: value,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey.shade600,
+            color: P_1,
           ),
-          style: TextStyle(fontSize: 15, color: Colors.black87),
+          style: TextStyle(fontSize: 15, color: B_1),
+          dropdownColor: P_3,
           onChanged: onChanged,
+          borderRadius: BorderRadius.circular(20),
+          menuMaxHeight: 200,
           items: items
               .map(
-                (item) => DropdownMenuItem(value: item, child: Text(item)),
+                (item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: B_1,
+                    ),
+                  ),
+                ),
               )
               .toList(),
         ),
@@ -241,20 +253,20 @@ class _InfoCatState extends State<InfoCat> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 14),
       decoration: BoxDecoration(
-        color: color ?? Colors.grey.shade100,
+        color: color ?? WHITE,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: B_4),
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey.shade600, size: 20),
-          const SizedBox(width: 8),
+          Icon(icon, color: Colors.grey.shade600, size: 16),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 15, color: Colors.black87),
+              style: TextStyle(fontSize: 14, color: Colors.black87),
             ),
           ),
         ],
@@ -281,7 +293,8 @@ class _InfoCatState extends State<InfoCat> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: Colors.grey.shade200,
+                    color: WHITE,
+                    border: Border.all(color: B_4),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -628,9 +641,9 @@ class _InfoCatState extends State<InfoCat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("고양이 정보 수정", style: TextStyle(color: Colors.black87)),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black87),
+        title: Text("고양이 정보 수정", style: TextStyle(color: B_1)),
+        backgroundColor: WHITE,
+        iconTheme: IconThemeData(color: B_1),
         actions: [
           IconButton(
             icon: Icon(Icons.delete, color: Colors.red),
@@ -656,7 +669,7 @@ class _InfoCatState extends State<InfoCat> {
                             ? "NO. ${_selectedDuplicateCat!.catId}"
                             : "NO. ${widget.cat.catId}",
                         style: TextStyle(
-                          color: Colors.black87,
+                          color: B_1,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
@@ -689,9 +702,11 @@ class _InfoCatState extends State<InfoCat> {
                   controller: _detailLocationController,
                   decoration: InputDecoration(
                     hintText: '상세 주소를 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -706,9 +721,11 @@ class _InfoCatState extends State<InfoCat> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '털 색을 입력해주세요 (예: 검정, 갈색, 흰색 등)',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -733,9 +750,11 @@ class _InfoCatState extends State<InfoCat> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '눈 색을 입력해주세요 (예: 검정, 녹색, 갈색 등)',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -768,9 +787,11 @@ class _InfoCatState extends State<InfoCat> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '예) 오른쪽 귀가 잘림, 꼬리가 짧음 등',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -789,8 +810,8 @@ class _InfoCatState extends State<InfoCat> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade400,
-                          foregroundColor: Colors.white,
+                          backgroundColor: B_3,
+                          foregroundColor: WHITE,
                           minimumSize: Size(0, 52),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -810,9 +831,8 @@ class _InfoCatState extends State<InfoCat> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isFormValid ? Colors.teal : Colors.grey.shade400,
-                          foregroundColor: Colors.white,
+                          backgroundColor: isFormValid ? P_1 : B_3,
+                          foregroundColor: WHITE,
                           minimumSize: Size(0, 52),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1022,8 +1042,9 @@ class _InfoCatState extends State<InfoCat> {
             ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.brown,
-              backgroundColor: Colors.brown[100],
+              foregroundColor: BROWN,
+              backgroundColor: P_3,
+              side: BorderSide(color: B_4),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -1036,7 +1057,7 @@ class _InfoCatState extends State<InfoCat> {
                   ? "선택: No. ${_selectedDuplicateCat!.catId}"
                   : "중복 고양이 선택",
               style: TextStyle(
-                color: Colors.brown,
+                color: BROWN,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),

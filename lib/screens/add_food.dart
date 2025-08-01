@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'home_screen.dart';
 import 'package:cat_project/components/components.dart';
+import 'package:cat_project/components/colors.dart';
 
 class AddFood extends StatefulWidget {
   const AddFood({super.key});
@@ -175,13 +176,13 @@ class _AddFoodState extends State<AddFood> {
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 14, bottom: 4),
+      padding: const EdgeInsets.only(left: 4),
       child: Text(
         text,
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: B_1,
         ),
       ),
     );
@@ -195,9 +196,9 @@ class _AddFoodState extends State<AddFood> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.grey.shade50,
+        border: Border.all(color: B_4),
+        borderRadius: BorderRadius.circular(40),
+        color: P_3,
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -205,13 +206,25 @@ class _AddFoodState extends State<AddFood> {
           value: value,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey.shade600,
+            color: P_1,
           ),
-          style: TextStyle(fontSize: 15, color: Colors.black87),
+          style: TextStyle(fontSize: 15, color: B_1),
+          dropdownColor: P_3,
           onChanged: onChanged,
+          borderRadius: BorderRadius.circular(20),
+          menuMaxHeight: 200,
           items: items
               .map(
-                (item) => DropdownMenuItem(value: item, child: Text(item)),
+                (item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: B_1,
+                    ),
+                  ),
+                ),
               )
               .toList(),
         ),
@@ -228,9 +241,9 @@ class _AddFoodState extends State<AddFood> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 14),
       decoration: BoxDecoration(
-        color: color ?? Colors.grey.shade100,
+        color: color ?? WHITE,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: B_4),
       ),
       child: Row(
         children: [
@@ -266,7 +279,8 @@ class _AddFoodState extends State<AddFood> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: Colors.grey.shade200,
+                    color: WHITE,
+                    border: Border.all(color: B_4),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -579,16 +593,16 @@ class _AddFoodState extends State<AddFood> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("급식 정보 추가", style: TextStyle(color: Colors.black87)),
-        backgroundColor: Colors.white,
+        title: Text("급식 정보 추가", style: TextStyle(color: B_1)),
+        backgroundColor: WHITE,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: B_1),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.only(left: 18, right: 18, bottom: 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -597,55 +611,73 @@ class _AddFoodState extends State<AddFood> {
                   onTap: _showImagePicker,
                   child: _buildPhotoArea(),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("발견 시간"),
+                SizedBox(height: 4),
                 _buildTimeInfoBox(),
+                SizedBox(height: 14),
                 _buildLabel("급식 장소"),
+                SizedBox(height: 4),
                 _buildInfoBox(
                   icon: Icons.location_on,
                   text: feedingSpotLocation.isNotEmpty
                       ? feedingSpotLocation
                       : '위치 정보 없음',
                 ),
+                SizedBox(height: 14),
                 _buildLabel("상세 주소"),
+                SizedBox(height: 4),
                 TextField(
                   decoration: InputDecoration(
                     hintText: '상세 주소를 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
                   onChanged: (v) => setState(() => detailLocation = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("급여 방식"),
+                SizedBox(height: 4),
                 _buildDropdown(
                   items: feedingMethodItems,
                   value: selectedFeedingMethod ?? feedingMethodItems[0],
                   onChanged: (v) => setState(() => selectedFeedingMethod = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("청결도 평가"),
+                SizedBox(height: 4),
                 _buildDropdown(
                   items: cleanlinessRatingItems,
                   value: selectedCleanlinessRating ?? cleanlinessRatingItems[0],
                   onChanged: (v) =>
                       setState(() => selectedCleanlinessRating = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("쉼터 상태"),
+                SizedBox(height: 4),
                 _buildDropdown(
                   items: shelterConditionItems,
                   value: selectedShelterCondition ?? shelterConditionItems[0],
                   onChanged: (v) =>
                       setState(() => selectedShelterCondition = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("밥그릇 수"),
+                SizedBox(height: 4),
                 TextField(
                   decoration: InputDecoration(
                     hintText: '밥그릇 수를 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -653,13 +685,17 @@ class _AddFoodState extends State<AddFood> {
                   keyboardType: TextInputType.number,
                   onChanged: (v) => setState(() => bowlCountFood = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("물그릇 수"),
+                SizedBox(height: 4),
                 TextField(
                   decoration: InputDecoration(
                     hintText: '물그릇 수를 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -667,43 +703,57 @@ class _AddFoodState extends State<AddFood> {
                   keyboardType: TextInputType.number,
                   onChanged: (v) => setState(() => bowlCountWater = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("그릇 크기"),
+                SizedBox(height: 4),
                 _buildDropdown(
                   items: bowlSizeItems,
                   value: selectedBowlSize ?? bowlSizeItems[0],
                   onChanged: (v) => setState(() => selectedBowlSize = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("그릇 청결 정도"),
+                SizedBox(height: 4),
                 _buildDropdown(
                   items: bowlCleanlinessItems,
                   value: selectedBowlCleanliness ?? bowlCleanlinessItems[0],
                   onChanged: (v) => setState(() => selectedBowlCleanliness = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("사료 잔여 여부"),
+                SizedBox(height: 4),
                 _buildDropdown(
                   items: foodRemainItems,
                   value: selectedFoodRemain ?? foodRemainItems[0],
                   onChanged: (v) => setState(() => selectedFoodRemain = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("물 잔여 여부"),
+                SizedBox(height: 4),
                 _buildDropdown(
                   items: waterRemainItems,
                   value: selectedWaterRemain ?? waterRemainItems[0],
                   onChanged: (v) => setState(() => selectedWaterRemain = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("사료 종류"),
+                SizedBox(height: 4),
                 _buildDropdown(
                   items: foodTypeItems,
                   value: selectedFoodType ?? foodTypeItems[0],
                   onChanged: (v) => setState(() => selectedFoodType = v),
                 ),
+                SizedBox(height: 14),
                 _buildLabel("특이사항"),
+                SizedBox(height: 4),
                 TextField(
                   decoration: InputDecoration(
                     hintText: '특이사항을 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -715,10 +765,9 @@ class _AddFoodState extends State<AddFood> {
                 Center(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          isFormValid ? Colors.teal : Colors.grey.shade400,
-                      foregroundColor: Colors.white,
-                      minimumSize: Size(340, 52),
+                      backgroundColor: isFormValid ? P_1 : B_3,
+                      foregroundColor: WHITE,
+                      minimumSize: Size(double.infinity, 52),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

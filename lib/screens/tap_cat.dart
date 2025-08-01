@@ -1,4 +1,6 @@
 // tap_cat.dart
+import 'package:cat_project/components/components.dart';
+import 'package:cat_project/components/colors.dart';
 import 'package:cat_project/screens/add_cat.dart';
 import 'package:cat_project/screens/info_cat.dart';
 import 'package:floating_action_bubble/floating_action_bubble.dart';
@@ -27,7 +29,7 @@ class _CatListScreenState extends State<CatListScreen> {
   bool isSelectionMode = false; // 선택 모드인지 확인
 
   final dio = Dio();
-  final url = 'http://catlove.o-r.kr:4000/api/cat';
+  final url = '$BASE_URL/cat';
 
   final String transmittedCatsKey = 'transmittedCats';
 
@@ -280,25 +282,25 @@ class _CatListScreenState extends State<CatListScreen> {
       appBar: isSelectionMode
           ? AppBar(
               title: Text('${selectedCats.length}마리 선택됨'),
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
+              backgroundColor: P_1,
+              foregroundColor: WHITE,
               actions: [
                 TextButton(
                   onPressed: _exitSelectionMode,
                   child: Text(
                     '취소',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: WHITE),
                   ),
                 ),
               ],
             )
           : AppBar(
               title: Text('고양이 목록'),
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black87,
+              backgroundColor: WHITE,
+              foregroundColor: B_1,
               actions: [
                 IconButton(
-                  icon: Icon(Icons.refresh, color: Colors.blue),
+                  icon: Icon(Icons.refresh, color: P_1),
                   onPressed: _loadCats,
                   tooltip: '목록 새로고침',
                 ),
@@ -325,14 +327,14 @@ class _CatListScreenState extends State<CatListScreen> {
           }
         },
         elevation: 5,
-        backgroundColor: Color(0xFFFFF8E1),
-        icon: Icon(Icons.pets, size: 22, color: Color(0xFF8D6E63)),
+        backgroundColor: P_3,
+        icon: Icon(Icons.pets, size: 22, color: BROWN),
         label: Text(
           '신규 고양이 추가',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
-            color: Color(0xFF8D6E63),
+            color: BROWN,
           ),
         ),
       ),
@@ -345,9 +347,8 @@ class _CatListScreenState extends State<CatListScreen> {
             child: ElevatedButton.icon(
               onPressed: () => _sendToServer(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    selectedCats.isNotEmpty ? Color(0xFF4CAF50) : Colors.grey,
-                foregroundColor: Colors.white,
+                backgroundColor: selectedCats.isNotEmpty ? P_1 : B_3,
+                foregroundColor: WHITE,
                 padding: EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -404,14 +405,14 @@ class _CatListScreenState extends State<CatListScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.orange.withOpacity(0.1)
+                    ? P_1.withOpacity(0.1)
                     : isTransmitted
-                        ? Colors.green.withOpacity(0.05)
+                        ? P_2.withOpacity(0.05)
                         : Colors.transparent,
                 border: isSelected
-                    ? Border.all(color: Colors.orange, width: 2)
+                    ? Border.all(color: P_1, width: 2)
                     : isTransmitted
-                        ? Border.all(color: Colors.green, width: 1)
+                        ? Border.all(color: P_2, width: 1)
                         : null,
               ),
               child: Column(
@@ -426,7 +427,7 @@ class _CatListScreenState extends State<CatListScreen> {
                           SizedBox(width: 8),
                           Icon(
                             Icons.check_circle,
-                            color: Colors.green,
+                            color: P_1,
                             size: 16,
                           ),
                           SizedBox(width: 4),
@@ -434,7 +435,7 @@ class _CatListScreenState extends State<CatListScreen> {
                             '전송됨',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.green,
+                              color: P_1,
                               fontWeight: FontWeight.w500,
                             ),
                           ),

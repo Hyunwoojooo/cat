@@ -64,49 +64,63 @@ class _InfoFoodState extends State<InfoFood> {
   // 드롭다운 항목 리스트 (add_food.dart와 동일하게 맞춰주세요)
   final List<String> feedingMethodItems = [
     "선택",
-    "밥 그릇만",
-    "바닥(그릇 없음)",
-    "자동 급여기"
+    "1. 자유급식",
+    "2. 시간제급식",
+    "3. 수동급식",
   ];
   final List<String> cleanlinessRatingItems = [
     "선택",
-    "1. 전혀 위생적이지 않음",
-    "2. 위생적이지 않음",
+    "1. 매우 깨끗함",
+    "2. 깨끗함",
     "3. 보통",
-    "4. 위생적임",
-    "5. 매우 위생적임",
+    "4. 더러움",
+    "5. 매우 더러움",
   ];
   final List<String> shelterConditionItems = [
     "선택",
-    "1. 전혀 노출되지 않음",
-    "2. 노출되지 않음",
+    "1. 매우 좋음",
+    "2. 좋음",
     "3. 보통",
-    "4. 노출됨",
-    "5. 매우 노출됨"
+    "4. 나쁨",
+    "5. 매우 나쁨",
   ];
   final List<String> bowlSizeItems = [
     "선택",
-    "1. 250ml(접시, 햇반)",
-    "2. 500ml(국그릇)",
-    "3. 1L(냄비 그릇)",
-    "4. 2L(탕요기) 이상"
+    "1. 작음",
+    "2. 보통",
+    "3. 큼",
   ];
   final List<String> bowlCleanlinessItems = [
     "선택",
-    "1. 매우 더러움",
-    "2. 더러움",
+    "1. 매우 깨끗함",
+    "2. 깨끗함",
     "3. 보통",
-    "4. 청결",
-    "5. 매우 청결"
+    "4. 더러움",
+    "5. 매우 더러움",
   ];
-  final List<String> foodRemainItems = ["선택", "1. 사료 있음", "2. 사료 없음"];
-  final List<String> waterRemainItems = ["선택", "1. 물 있음", "2. 물 없음"];
+  final List<String> foodRemainItems = [
+    "선택",
+    "1. 없음",
+    "2. 적음",
+    "3. 보통",
+    "4. 많음",
+    "5. 매우 많음",
+  ];
+  final List<String> waterRemainItems = [
+    "선택",
+    "1. 없음",
+    "2. 적음",
+    "3. 보통",
+    "4. 많음",
+    "5. 매우 많음",
+  ];
   final List<String> foodTypeItems = [
     "선택",
     "1. 건사료",
-    "2. 동물용 습식캔",
-    "3. 사람 음식물",
-    "4. 확인 불가"
+    "2. 습식사료",
+    "3. 생고기",
+    "4. 생선",
+    "5. 기타",
   ];
 
   // Kakao Maps API 키를 상수로 정의
@@ -228,7 +242,7 @@ class _InfoFoodState extends State<InfoFood> {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: B_1,
         ),
       ),
     );
@@ -242,9 +256,9 @@ class _InfoFoodState extends State<InfoFood> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.grey.shade50,
+        border: Border.all(color: B_4),
+        borderRadius: BorderRadius.circular(40),
+        color: P_3,
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -252,13 +266,25 @@ class _InfoFoodState extends State<InfoFood> {
           value: value,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey.shade600,
+            color: P_1,
           ),
-          style: TextStyle(fontSize: 15, color: Colors.black87),
+          style: TextStyle(fontSize: 15, color: B_1),
+          dropdownColor: P_3,
           onChanged: onChanged,
+          borderRadius: BorderRadius.circular(20),
+          menuMaxHeight: 200,
           items: items
               .map(
-                (item) => DropdownMenuItem(value: item, child: Text(item)),
+                (item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: B_1,
+                    ),
+                  ),
+                ),
               )
               .toList(),
         ),
@@ -273,20 +299,20 @@ class _InfoFoodState extends State<InfoFood> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 14),
       decoration: BoxDecoration(
-        color: color ?? Colors.grey.shade100,
+        color: color ?? WHITE,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: B_4),
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey.shade600, size: 20),
-          const SizedBox(width: 8),
+          Icon(icon, color: Colors.grey.shade600, size: 16),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 15, color: Colors.black87),
+              style: TextStyle(fontSize: 14, color: Colors.black87),
             ),
           ),
         ],
@@ -313,7 +339,8 @@ class _InfoFoodState extends State<InfoFood> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: Colors.grey.shade200,
+                    color: WHITE,
+                    border: Border.all(color: B_4),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -656,9 +683,9 @@ class _InfoFoodState extends State<InfoFood> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("급식 정보 수정", style: TextStyle(color: Colors.black87)),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black87),
+        title: Text("급식 정보 수정", style: TextStyle(color: B_1)),
+        backgroundColor: WHITE,
+        iconTheme: IconThemeData(color: B_1),
         actions: [
           IconButton(
             icon: Icon(Icons.delete, color: Colors.red),
@@ -682,7 +709,7 @@ class _InfoFoodState extends State<InfoFood> {
                       child: Text(
                         "NO. ${widget.food.feedingSpotLocation}",
                         style: TextStyle(
-                          color: Colors.black87,
+                          color: B_1,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
@@ -715,9 +742,11 @@ class _InfoFoodState extends State<InfoFood> {
                   controller: _detailLocationController,
                   decoration: InputDecoration(
                     hintText: '상세 주소를 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -756,9 +785,11 @@ class _InfoFoodState extends State<InfoFood> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '밥그릇 수를 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -774,9 +805,11 @@ class _InfoFoodState extends State<InfoFood> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '물그릇 수를 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -832,9 +865,11 @@ class _InfoFoodState extends State<InfoFood> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '예) 사료가 부족함, 그릇이 깨짐 등',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -853,8 +888,8 @@ class _InfoFoodState extends State<InfoFood> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade400,
-                          foregroundColor: Colors.white,
+                          backgroundColor: B_3,
+                          foregroundColor: WHITE,
                           minimumSize: Size(0, 52),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -874,9 +909,8 @@ class _InfoFoodState extends State<InfoFood> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isFormValid ? Colors.teal : Colors.grey.shade400,
-                          foregroundColor: Colors.white,
+                          backgroundColor: isFormValid ? P_1 : B_3,
+                          foregroundColor: WHITE,
                           minimumSize: Size(0, 52),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

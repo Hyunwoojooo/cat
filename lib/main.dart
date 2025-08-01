@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
 import 'utils/user_preferences.dart';
+import 'components/app_theme.dart';
 
 void main() {
   // 로그 레벨 설정
@@ -18,10 +19,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '고양이 일기',
-      theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: AppBarTheme(color: Colors.white),
-      ),
+      theme: AppTheme.theme,
       debugShowCheckedModeBanner: false,
       home: const AuthWrapper(),
     );

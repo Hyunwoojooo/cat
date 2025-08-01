@@ -1,3 +1,5 @@
+import 'package:cat_project/components/components.dart';
+import 'package:cat_project/components/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cat_project/models/food.dart';
 import 'package:cat_project/screens/add_food.dart';
@@ -22,7 +24,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
   bool isSelectionMode = false; // 선택 모드인지 확인
 
   final dio = Dio();
-  final url = 'http://catlove.o-r.kr:4000/api/food';
+  final url = '$BASE_URL/food';
   final String transmittedFoodsKey = 'transmittedFoods';
 
   // 날짜 문자열을 ISO 8601 형식으로 변환하는 함수
@@ -281,25 +283,25 @@ class _FoodListScreenState extends State<FoodListScreen> {
       appBar: isSelectionMode
           ? AppBar(
               title: Text('${selectedFoods.length}개 선택됨'),
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
+              backgroundColor: P_1,
+              foregroundColor: WHITE,
               actions: [
                 TextButton(
                   onPressed: _exitSelectionMode,
                   child: Text(
                     '취소',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: WHITE),
                   ),
                 ),
               ],
             )
           : AppBar(
               title: Text('급식 정보 목록'),
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black87,
+              backgroundColor: WHITE,
+              foregroundColor: B_1,
               actions: [
                 IconButton(
-                  icon: Icon(Icons.refresh, color: Colors.blue),
+                  icon: Icon(Icons.refresh, color: P_1),
                   onPressed: _loadFoods,
                   tooltip: '목록 새로고침',
                 ),
@@ -324,14 +326,14 @@ class _FoodListScreenState extends State<FoodListScreen> {
           }
         },
         elevation: 5,
-        backgroundColor: Color(0xFFFFF8E1),
-        icon: Icon(Icons.food_bank_rounded, size: 22, color: Color(0xFF8D6E63)),
+        backgroundColor: P_3,
+        icon: Icon(Icons.food_bank_rounded, size: 22, color: BROWN),
         label: Text(
           '신규 급식 정보 추가',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
-            color: Color(0xFF8D6E63),
+            color: BROWN,
           ),
         ),
       ),
@@ -344,9 +346,8 @@ class _FoodListScreenState extends State<FoodListScreen> {
             child: ElevatedButton.icon(
               onPressed: () => _sendToServer(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    selectedFoods.isNotEmpty ? Color(0xFF4CAF50) : Colors.grey,
-                foregroundColor: Colors.white,
+                backgroundColor: selectedFoods.isNotEmpty ? P_1 : B_3,
+                foregroundColor: WHITE,
                 padding: EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -403,14 +404,14 @@ class _FoodListScreenState extends State<FoodListScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.orange.withOpacity(0.1)
+                    ? P_1.withOpacity(0.1)
                     : isTransmitted
-                        ? Colors.green.withOpacity(0.05)
+                        ? P_2.withOpacity(0.05)
                         : Colors.transparent,
                 border: isSelected
-                    ? Border.all(color: Colors.orange, width: 2)
+                    ? Border.all(color: P_1, width: 2)
                     : isTransmitted
-                        ? Border.all(color: Colors.green, width: 1)
+                        ? Border.all(color: P_2, width: 1)
                         : null,
               ),
               child: Column(
@@ -425,7 +426,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
                           SizedBox(width: 8),
                           Icon(
                             Icons.check_circle,
-                            color: Colors.green,
+                            color: P_1,
                             size: 16,
                           ),
                           SizedBox(width: 4),
@@ -433,7 +434,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
                             '전송됨',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.green,
+                              color: P_1,
                               fontWeight: FontWeight.w500,
                             ),
                           ),

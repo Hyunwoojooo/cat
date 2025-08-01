@@ -139,7 +139,7 @@ class _AddCatState extends State<AddCat> {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: B_1,
         ),
       ),
     );
@@ -153,9 +153,9 @@ class _AddCatState extends State<AddCat> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.grey.shade50,
+        border: Border.all(color: B_4),
+        borderRadius: BorderRadius.circular(40),
+        color: P_3,
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -163,13 +163,25 @@ class _AddCatState extends State<AddCat> {
           value: value,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey.shade600,
+            color: P_1,
           ),
-          style: TextStyle(fontSize: 15, color: Colors.black87),
+          style: TextStyle(fontSize: 15, color: B_1),
+          dropdownColor: P_3,
           onChanged: onChanged,
+          borderRadius: BorderRadius.circular(20),
+          menuMaxHeight: 200,
           items: items
               .map(
-                (item) => DropdownMenuItem(value: item, child: Text(item)),
+                (item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: B_1,
+                    ),
+                  ),
+                ),
               )
               .toList(),
         ),
@@ -186,9 +198,9 @@ class _AddCatState extends State<AddCat> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 14),
       decoration: BoxDecoration(
-        color: color ?? Colors.grey.shade100,
+        color: color ?? WHITE,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: B_4),
       ),
       child: Row(
         children: [
@@ -224,7 +236,8 @@ class _AddCatState extends State<AddCat> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: Colors.grey.shade200,
+                    color: WHITE,
+                    border: Border.all(color: B_4),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -559,9 +572,9 @@ class _AddCatState extends State<AddCat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("신규 고양이 추가", style: TextStyle(color: Colors.black87)),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black87),
+        title: Text("신규 고양이 추가", style: TextStyle(color: B_1)),
+        backgroundColor: WHITE,
+        iconTheme: IconThemeData(color: B_1),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -582,7 +595,7 @@ class _AddCatState extends State<AddCat> {
                           return Text(
                             snapshot.data ?? "NO. ${widget.number + 1}",
                             style: TextStyle(
-                              color: Colors.black87,
+                              color: B_1,
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
@@ -616,9 +629,11 @@ class _AddCatState extends State<AddCat> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '상세 주소를 입력해주세요',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -633,9 +648,11 @@ class _AddCatState extends State<AddCat> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '털 색을 입력해주세요 (예: 검정, 갈색, 흰색 등)',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -658,9 +675,11 @@ class _AddCatState extends State<AddCat> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '눈 색을 입력해주세요 (예: 검정, 녹색, 갈색 등)',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -691,9 +710,11 @@ class _AddCatState extends State<AddCat> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: '예) 오른쪽 귀가 잘림, 꼬리가 짧음 등',
+                    filled: true,
+                    fillColor: WHITE,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: B_4),
                     ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -707,10 +728,9 @@ class _AddCatState extends State<AddCat> {
                 Center(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          isFormValid ? Colors.teal : Colors.grey.shade400,
-                      foregroundColor: Colors.white,
-                      minimumSize: Size(340, 52),
+                      backgroundColor: isFormValid ? P_1 : B_3,
+                      foregroundColor: WHITE,
+                      minimumSize: Size(double.infinity, 52),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -871,7 +891,8 @@ class _AddCatState extends State<AddCat> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               foregroundColor: BROWN,
-              backgroundColor: BROWN_LIGHT,
+              backgroundColor: P_3,
+              side: BorderSide(color: B_4),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),

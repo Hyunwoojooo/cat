@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'home_screen.dart';
 import '../utils/user_preferences.dart';
+import '../components/components.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _errorMessage = '';
 
   // API 설정
-  static const String _loginEndpoint = 'http://catlove.o-r.kr:4000/api/user/id';
+  static const String _loginEndpoint = '$BASE_URL/user/id';
 //
   @override
   void initState() {
